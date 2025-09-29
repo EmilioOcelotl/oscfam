@@ -1,0 +1,266 @@
+// Insonora
+
+s.boot;
+
+(
+
+// bass
+
+~bassString = [];
+b = [];
+for (0, 23, {arg i; ~bassString = ~bassString.add("/home/emi/muestras/808/bass/bass__"++i.asString++"_.wav"); b = b.add(0) });
+for (0, 23, {arg i; b[i] = Buffer.read(s, ~bassString[i] )});
+
+// clap
+
+~clapString = [];
+c = [];
+for (0, 15, {arg i; ~clapString = ~clapString.add("/home/emi/muestras/808/clap/clap__"++i.asString++"_.wav"); c = c.add(0) });
+for (0, 15, {arg i; c[i] = Buffer.read(s, ~clapString[i] )});
+
+// cymbal
+
+~cymbalString = [];
+y = [];
+for (0, 4, {arg i; ~cymbalString = ~cymbalString.add("/home/emi/muestras/808/cymbal/cymbal__"++i.asString++"_.wav"); y = y.add(0) });
+for (0, 4, {arg i; y[i] = Buffer.read(s, ~cymbalString[i] )});
+
+// hihat
+
+~hihatString = [];
+h = [];
+for (0, 39, {arg i; ~hihatString = ~hihatString.add("/home/emi/muestras/808/hihat/hi_hat__"++i.asString++"_.wav"); h = h.add(0) });
+for (0, 39, {arg i; h[i] = Buffer.read(s, ~hihatString[i] )});
+
+// kick
+
+~kickString = [];
+k = [];
+for (0, 22, {arg i; ~kickString = ~kickString.add("/home/emi/muestras/808/kick/kick__"++i.asString++"_.wav"); k = k.add(0) });
+for (0, 22, {arg i; k[i] = Buffer.read(s, ~kickString[i] )});
+a = Buffer.read(s, "/home/emi/sonidos/grabaciones/2024/oci/ociSonoridad01Extracto.wav");
+d = Buffer.read(s, "/home/emi/sonidos/grabaciones/2024/enero2024/posadaRealPlaya8Aqui.WAV");
+// snare
+
+~snareString = [];
+n = [];
+for (0, 48, {arg i; ~snareString = ~snareString.add("/home/emi/muestras/808/snare/snare__"++i.asString++"_.wav"); n = n.add(0) });
+for (0, 48, {arg i; n[i] = Buffer.read(s, ~snareString[i] )});
+
+// kick
+
+~tomString = [];
+t = [];
+for (0, 13, {arg i; ~tomString = ~tomString.add("/home/emi/muestras/808/tom/tom__"++i.asString++"_.wav"); t = t.add(0) });
+for (0, 13, {arg i; t[i] = Buffer.read(s, ~tomString[i] )});
+
+// varios
+
+/*
+~varString = [];
+v = [];
+for (0, 5, {arg i; ~varString = ~varString.add("/home/emi/muestras/var/"++i.asString++".wav"); v = v.add(0) });
+for (0, 5, {arg i; v[i] = Buffer.read(s, ~varString[i] )});
+*/
+
+// i = Buffer.read(s, "/home/emi/Música/three2.0/finales/cello.wav");
+// d = Buffer.read(s, "/home/emi/sonidos/grabaciones/2024/enero2024/posadaRealPlaya8Aqui.WAV");
+
+~varString = [];
+v = [];
+for (0, 5, {arg i; ~varString = ~varString.add("/home/emi/muestras/bark/"++i.asString++".wav"); v = v.add(0) });
+for (0, 5, {arg i; v[i] = Buffer.read(s, ~varString[i] )});
+
+)
+
+p = ProxySpace.push(s.boot);
+
+p.makeTempoClock((120/120)); // tempo, importante
+p.quant = 4;
+s.meter;
+
+(
+~outS = {
+    var src = ~out.ar;
+    var compressed = Compander.ar(
+        src,
+        src,
+        thresh: 0.25,
+        slopeBelow: 1.0,
+        slopeAbove: 0.5,
+        clampTime: 0.01,
+        relaxTime: 0.1
+    );
+    DelayC.ar(
+        compressed,
+        maxdelaytime: 0.01,
+        delaytime: 0.00045,
+        mul: 0.5
+    ) ! 2;
+};
+~outD = {
+    var src = ~out.ar;
+    var bpfs = BPF.ar(
+        src,
+        freq: Array.geom(8, 50, 1.5) * LFNoise2.kr(0.1).range(0.8, 1.2),
+        rq: 1/4
+    ).sum;
+    var reverb = GVerb.ar(
+        bpfs,
+        roomsize: 40,
+        revtime: 4.0,
+        damping: 0.7,
+        inputbw: 0.25,
+        spread: 15,
+        drylevel: -6.dbamp,
+        earlyreflevel: -12.dbamp,
+        taillevel: -12.dbamp,
+        maxroomsize: 50,
+        mul: 0.3
+    );
+    LeakDC.ar(reverb) * 0.4;
+};
+~outM = {
+    Limiter.ar(
+        in: (~outS + ~outD),
+        level: 0.9,
+        dur: 0.01
+    )
+};
+~woobass = {
+    |freq = 50, wobRate = 2, wobDepth = 2000, amp = 0.5|
+    var osc, wob, filt, env, gate;
+    gate = ~dwoogate.kr;
+    osc = Saw.ar(~dwoofreq.kr) * 0.5 + SinOsc.ar(freq*1.01) * 0.5;
+    wob = SinOsc.kr(~dwooseq.kr).range(200, 200 + wobDepth);
+    filt = RLPF.ar(osc, wob, 0.2);
+    env = EnvGen.kr(Env.adsr(0.01, 0.1, 0.5, 0.2), gate, doneAction:0);
+    (filt * env * amp).dup; // estéreo
+};
+)
+
+~outM.play;
+
+// cargar otras muestras
+// por si hay que grabar y onsetear 0 es no y 1 es sí
+
+// Primera parte
+
+s.meter
+
+(
+
+~demaBuf = {Lag.kr(Demand.kr(Impulse.kr(~tempo*1), 0, Drand([ 0.1, 0.44, 0.5, 0.2, 0.7, 0, 0, 0, 0], inf)), 2)};
+
+~demaBuf2 = {Demand.kr(Impulse.kr(~tempo*0.5), 0, Drand([ 0.5, 0.5, -0.25, 1, 1, -1, -1, -0.5]*1, inf))};
+
+~demaBuf3 = {Demand.kr(Impulse.kr(~tempo*1), 0, Drand([ 2,5, 7, 4, 8, 3, 0, 0, 0, 0]*1, inf))};
+
+~out = ~buf + ~wpA1;
+
+~buf = {Pan2.ar(PlayBuf.ar(1, v[3], BufRateScale.kr(v[3]) * ~demaBuf2 * [1.01, 1], Impulse.kr(~tempo * ~demaBuf3), BufFrames.kr(v[3]) * ~demaBuf))*0.5};
+
+~wpA1 = {arg amp = 1; Pan2.ar(Warp1.ar(1, v[3], ~demaBuf, ~demaBuf2, 0.1, -1, 10, 0.1, 5)) * 0.5};
+
+)
+
+// segunda parte
+
+(
+
+~demaBuf = {Lag.kr(Demand.kr(Impulse.kr(~tempo*4), 0, Drand([ 0.1, 0.44, 0.5, 0.2, 0.7, 0, 0, 0, 0], inf)), 1)};
+
+~demaBuf2 = {Demand.kr(Impulse.kr(~tempo*0.5), 0, Drand([ 0.5, 0.5, -0.25, 1, 1, -1, -1, -0.5]*1, inf))};
+
+~demaBuf3 = {Demand.kr(Impulse.kr(~tempo*2), 0, Drand([ 2,5, 7, 4, 8, 3, 0, 0, 0, 0]*1, inf))};
+
+~out = ~buf + ~wpA1;
+
+~buf = {Pan2.ar(PlayBuf.ar(1, v[3], BufRateScale.kr(v[3]) * ~demaBuf2 * [1.01, 1], Impulse.kr(~tempo * ~demaBuf3), BufFrames.kr(v[3]) * ~demaBuf))*0.25};
+
+~wpA1 = {arg amp = 1; Pan2.ar(Warp1.ar(1, v[3], ~demaBuf, ~demaBuf2, 0.1, -1, 14, 0.1, 5)) * 0.2};
+
+)
+
+// tercera parte
+
+(
+
+~demaBuf = {Lag.kr(Demand.kr(Impulse.kr(~tempo*4), 0, Drand([ 0.1, 0.44, 0.5, 0.2, 0.7, 0, 0, 0, 0], inf)), 2)};
+
+~demaBuf2 = {Demand.kr(Impulse.kr(~tempo*0.5), 0, Drand([ 0.5, 0.5, -0.25, 1, 1, -1, -1, -0.5]*1, inf))};
+
+~demaBuf3 = {Demand.kr(Impulse.kr(~tempo*2), 0, Drand([ 2,5, 7, 4, 8, 3, 0, 0, 0, 0]*1, inf))};
+
+~out = ~buf + ~wpA1;
+
+~buf = {Pan2.ar(PlayBuf.ar(1, v[4], BufRateScale.kr(v[4]) * ~demaBuf2 * [1.1, 1], Impulse.kr(~tempo * ~demaBuf3), BufFrames.kr(v[4]) * ~demaBuf))*0.25};
+
+~wpA1 = {arg amp = 1; Pan2.ar(Warp1.ar(1, v[4], ~demaBuf, ~demaBuf2, 0.05, -1, 14, 0.1, 5)) * 0.2};
+
+)
+
+(
+
+~ons1 = { arg th = 0.9; Onsets.kr(FFT(LocalBuf(512), ~buf), th)};
+~ons2 = { arg th = 0.9; Onsets.kr(FFT(LocalBuf(512), ~wpA1), th)};
+
+)
+
+(
+
+// ~out = ~buf + ~kick + ~clap + ~wpA1 + ~tom + ~hihat;
+~out = ~wpA1;
+
+~demaBuf = {Lag.kr(Demand.kr(Impulse.kr(~tempo*4), 0, Drand([ 0.1, 0.44, 0.5, 0.2, 0.7, 0, 0, 0, 0], inf)), 1)};
+
+~demaBuf2 = {Demand.kr(Impulse.kr(~tempo*0.5), 0, Drand([ 0.5, 0.5, -0.25, 1, 1, -1, -1, -0.5]*1, inf))};
+
+~demaBuf3 = {Demand.kr(Impulse.kr(~tempo*2), 0, Drand([ 2,5, 7, 4, 8, 3, 0, 0, 0, 0]*1, inf))};
+
+
+~demaBuf4 = {Demand.kr(Impulse.kr(~tempo*2), 0, Drand([ 2,5, 7, 4, 8, 3]*4, inf))};
+
+~buf = {Pan2.ar(PlayBuf.ar(1, v[4], BufRateScale.kr(v[4]) * ~demaBuf2 * [1.1, 1], Impulse.kr(~tempo * ~demaBuf3), BufFrames.kr(v[4]) * ~demaBuf))*0.2};
+
+~wpA1 = {arg amp = 1; Pan2.ar(Warp1.ar(1, v[4], ~demaBuf, ~demaBuf2*0.5´, 0.4, -1, 1, 0.1, 5)) * 0.25};
+
+// ~buf2 = {Pan2.ar(PlayBuf.ar(1, v[4], BufRateScale.kr(v[4]) * ~demaBuf2 * [1.1, 1], Impulse.kr(~tempo * ~demaBuf3), BufFrames.kr(v[4]) * ~demaBuf4))*0.2};
+
+a = rand(22);
+
+~kick = {Pan2.ar(PlayBuf.ar(1, k[1], BufRateScale.kr(k[1])*0.5, ~ons2, BufFrames.kr(k[1]) *
+	Demand.kr(~ons2, 0, Dseq([1, 0, 0, 0, 1, 0, 0, 0], inf))
+	, 0))*0.2};
+
+a = rand(15);
+
+~clap = {Pan2.ar(PlayBuf.ar(1, c[4], BufRateScale.kr(c[4])*1, ~ons2, BufFrames.kr(c[4]) *
+	Demand.kr(~ons2, 0, Dseq([1, 0, 0, 0, 0, 0, 0, 0], inf))
+	, 0))*0.2};
+
+a = rand(15);
+
+~hihat = {Pan2.ar(PlayBuf.ar(1, h[7], BufRateScale.kr(h[7])*2, ~ons2, BufFrames.kr(h[7]) *
+	Demand.kr(~ons2, 0, Dseq([0, 1, 0, 1, 0, 1, 0, 1], inf))
+	, 0))*0.4};
+
+a = rand(13);
+
+~dematom = {Demand.kr(~ons2, 0, Drand([ 0.5, 1, 2, 4]* 0.5, inf))};
+
+
+~tom = {Pan2.ar(PlayBuf.ar(1, t[0], BufRateScale.kr(t[0])*~dematom, ~ons2, BufFrames.kr(t[0]) *
+	Demand.kr(~ons2, 0, Dseq([1, 0, 0, 1, 1, 1, 0, 1], inf))
+	, 0))*0.4};
+
+a = rand(48);
+
+~snare = {Pan2.ar(PlayBuf.ar(1, n[a], BufRateScale.kr(n[a])*~dematom, ~ons1, BufFrames.kr(n[a]) *
+	Demand.kr(~ons2, 0, Dseq([1, 0, 0, 1, 1, 1, 0, 1], inf))
+	, 0))*0.4};
+
+
+)
+
+s.meter
