@@ -1,0 +1,19 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log
+yarn-error.log
+
+# macOS
+.DS_Store
+
+# Entornos y variables
+.env
+
+# ngrok
+.ngrok
+
+# IDEs y editores
+.vscode/
+.idea/
